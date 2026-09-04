@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ShopProvider } from './context/ShopContext';
+import IntroAnimation from './components/IntroAnimation';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Collections from './components/Collections';
@@ -21,6 +22,7 @@ import AdminDrawer from './components/AdminDrawer';
 import Toast from './components/Toast';
 
 export default function App() {
+  const [showIntro, setShowIntro] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
 
   const handleFilterCategory = (category) => {
@@ -35,6 +37,9 @@ export default function App() {
   return (
     <ShopProvider>
       <div className="min-h-screen bg-obsidian-950 text-neutral-200 flex flex-col font-sans selection:bg-gold-500/30 selection:text-champagne overflow-x-hidden">
+        {/* Luxury Opening Animation with Official Emblem */}
+        {showIntro && <IntroAnimation onComplete={() => setShowIntro(false)} />}
+
         {/* Sticky Premium Navbar */}
         <Navbar />
 

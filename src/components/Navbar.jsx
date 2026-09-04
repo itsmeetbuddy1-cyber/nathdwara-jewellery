@@ -81,15 +81,15 @@ export default function Navbar() {
 
           {/* Logo */}
           <a href="#home" className="flex flex-col items-center sm:items-start group">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full border border-gold-400/60 flex items-center justify-center bg-gold-500/10 group-hover:border-gold-300 transition-all shadow-gold-sm">
-                <span className="font-serif text-sm font-bold text-gold-300">N</span>
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-gold-400/60 overflow-hidden group-hover:border-gold-300 transition-all shadow-gold-sm shrink-0">
+                <img src="/nathdwara-logo.jpg" alt="Nathdwara Jwellery" className="w-full h-full object-cover" />
               </div>
               <span className="font-serif text-lg sm:text-xl lg:text-2xl font-bold tracking-[0.18em] text-gold-gradient uppercase">
                 Nathdwara Jwellery
               </span>
             </div>
-            <span className="hidden sm:block text-[9px] uppercase tracking-[0.28em] text-neutral-400 pl-9 font-sans -mt-0.5">
+            <span className="hidden sm:block text-[9px] uppercase tracking-[0.28em] text-neutral-400 pl-12 font-sans -mt-0.5">
               Crafted for You • Designed to Shine
             </span>
           </a>
@@ -168,9 +168,9 @@ export default function Navbar() {
           <div className="relative w-full max-w-xs bg-obsidian-900 border-r border-gold-400/20 p-6 flex flex-col justify-between shadow-2xl z-10">
             <div>
               <div className="flex items-center justify-between pb-6 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full border border-gold-400 flex items-center justify-center bg-gold-500/10">
-                    <span className="font-serif text-sm font-bold text-gold-300">N</span>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full border border-gold-400 overflow-hidden shadow-gold-sm shrink-0">
+                    <img src="/nathdwara-logo.jpg" alt="Nathdwara Jwellery" className="w-full h-full object-cover" />
                   </div>
                   <span className="font-serif text-base font-bold tracking-widest text-gold-gradient">
                     NATHDWARA

@@ -29,9 +29,9 @@ export default function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-white/10">
             {/* Brand Column */}
             <div className="lg:col-span-2">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-full border border-gold-400 flex items-center justify-center bg-gold-500/10 shadow-gold-sm">
-                  <span className="font-serif text-base font-bold text-gold-300">N</span>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full border border-gold-400 overflow-hidden shadow-gold-sm shrink-0">
+                  <img src="/nathdwara-logo.jpg" alt="Nathdwara Jwellery" className="w-full h-full object-cover" />
                 </div>
                 <span className="font-serif text-2xl font-bold tracking-[0.16em] text-gold-gradient uppercase">
                   Nathdwara Jwellery
