@@ -9,6 +9,10 @@ function TiltCard({ item, onSelectCategory }) {
   const [isHovered, setIsHovered] = useState(false);
 
   const handleMouseMove = (e) => {
+    // Only perform 3D tilt calculations on devices with a real mouse pointer
+    if (typeof window !== 'undefined' && window.matchMedia && !window.matchMedia('(hover: hover)').matches) {
+      return;
+    }
     const card = e.currentTarget;
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -23,7 +27,10 @@ function TiltCard({ item, onSelectCategory }) {
     setRotateY(rY);
   };
 
-  const handleMouseEnter = () => setIsHovered(true);
+  const handleMouseEnter = () => {
+    if (typeof window !== 'undefined' && window.matchMedia && !window.matchMedia('(hover: hover)').matches) return;
+    setIsHovered(true);
+  };
   const handleMouseLeave = () => {
     setIsHovered(false);
     setRotateX(0);
@@ -54,6 +61,7 @@ function TiltCard({ item, onSelectCategory }) {
           }}
           className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 brightness-[0.75] group-hover:brightness-[0.85]"
           loading="lazy"
+          decoding="async"
         />
         {/* Dark Vignette Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-obsidian-950 via-obsidian-950/50 to-transparent" />

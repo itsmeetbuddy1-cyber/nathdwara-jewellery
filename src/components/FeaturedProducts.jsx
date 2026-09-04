@@ -186,7 +186,7 @@ export default function FeaturedProducts({ activeFilter, setActiveFilter, onLaun
               <div
                 key={product.id}
                 onClick={() => setQuickViewProduct(product)}
-                className="group relative rounded-2xl glass-panel border border-gold-400/20 hover:border-gold-400/50 shadow-lg hover:shadow-2xl transition-all duration-500 flex flex-col cursor-pointer overflow-hidden"
+                className="group relative rounded-2xl glass-panel border border-gold-400/20 hover:border-gold-400/50 shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col cursor-pointer overflow-hidden product-card-optimize"
               >
                 {/* Product Image Stage */}
                 <div className="relative aspect-square w-full bg-obsidian-950 overflow-hidden flex items-center justify-center p-4">
@@ -196,8 +196,9 @@ export default function FeaturedProducts({ activeFilter, setActiveFilter, onLaun
                     onError={(e) => {
                       e.currentTarget.src = FALLBACK_JEWELLERY_IMAGE;
                     }}
-                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 brightness-[0.92] group-hover:brightness-100"
+                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 brightness-[0.92] group-hover:brightness-100"
                     loading="lazy"
+                    decoding="async"
                   />
 
                   {/* Gradient Shadow */}
@@ -205,7 +206,7 @@ export default function FeaturedProducts({ activeFilter, setActiveFilter, onLaun
 
                   {/* Tag Pill */}
                   {product.tag && (
-                    <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-gold-500/20 text-champagne border border-gold-400/30 backdrop-blur-md">
+                    <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-gold-500/25 text-champagne border border-gold-400/30 backdrop-blur-none sm:backdrop-blur-md">
                       {product.tag}
                     </span>
                   )}

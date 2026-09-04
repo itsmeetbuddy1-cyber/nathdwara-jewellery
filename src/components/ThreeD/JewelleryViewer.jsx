@@ -108,6 +108,7 @@ export default function JewelleryViewer({
 
     const width = container.clientWidth;
     const heightPx = container.clientHeight || 500;
+    const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || 'ontouchstart' in window);
 
     // 1. Scene Setup
     const scene = new THREE.Scene();
@@ -118,10 +119,15 @@ export default function JewelleryViewer({
     camera.position.set(0, 0.8, 5.5);
     cameraRef.current = camera;
 
-    // 3. Renderer with antialiasing and tone mapping for realistic jewelry shine
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    // 3. Renderer with antialiasing and tone mapping for realistic jewelry shine (Optimized for mobile)
+    const renderer = new THREE.WebGLRenderer({
+      antialias: !isMobile,
+      alpha: true,
+      powerPreference: 'high-performance',
+      precision: isMobile ? 'mediump' : 'highp',
+    });
     renderer.setSize(width, heightPx);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(isMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.75));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.35;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -265,8 +271,8 @@ export default function JewelleryViewer({
       haloGemMeshesRef.current.push(microGem);
     }
 
-    // 6. Floating Gold Shimmer Particles
-    const particleCount = 45;
+    // 6. Floating Gold Shimmer Particles (Optimized for mobile)
+    const particleCount = isMobile ? 18 : 45;
     const particleGeo = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount * 3; i += 3) {
@@ -350,9 +356,15 @@ export default function JewelleryViewer({
     window.addEventListener('touchend', handleMouseUp);
     container.addEventListener('wheel', handleWheel, { passive: false });
 
-    // 8. Render Loop with Smooth Damping (Inertia)
+    // 8. Render Loop with Smooth Damping (Inertia) & IntersectionObserver
     let clock = new THREE.Clock();
+    let isVisible = false;
+
     const animate = () => {
+      if (!isVisible) {
+        animationFrameIdRef.current = null;
+        return;
+      }
       animationFrameIdRef.current = requestAnimationFrame(animate);
 
       const elapsedTime = clock.getElapsedTime();
@@ -385,7 +397,21 @@ export default function JewelleryViewer({
 
       renderer.render(scene, camera);
     };
-    animate();
+
+    // Auto-pause when 3D Studio is scrolled off-screen
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isVisible = entry.isIntersecting;
+        if (isVisible && !animationFrameIdRef.current) {
+          animate();
+        } else if (!isVisible && animationFrameIdRef.current) {
+          cancelAnimationFrame(animationFrameIdRef.current);
+          animationFrameIdRef.current = null;
+        }
+      },
+      { threshold: 0.05 }
+    );
+    observer.observe(container);
 
     // 9. Resize Listener
     const handleResize = () => {
@@ -399,6 +425,7 @@ export default function JewelleryViewer({
     window.addEventListener('resize', handleResize);
 
     return () => {
+      observer.disconnect();
       if (animationFrameIdRef.current) cancelAnimationFrame(animationFrameIdRef.current);
       window.removeEventListener('resize', handleResize);
       container.removeEventListener('mousedown', handleMouseDown);

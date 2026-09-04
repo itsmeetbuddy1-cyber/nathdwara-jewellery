@@ -14,10 +14,12 @@ export default function IntroAnimation({ onComplete }) {
       const width = (canvas.width = window.innerWidth);
       const height = (canvas.height = window.innerHeight);
 
-      const particles = Array.from({ length: 55 }, () => ({
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+      const count = isMobile ? 22 : 55;
+      const particles = Array.from({ length: count }, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
-        radius: Math.random() * 2 + 0.8,
+        radius: Math.random() * 1.8 + 0.8,
         speedY: -(Math.random() * 0.8 + 0.3),
         speedX: (Math.random() - 0.5) * 0.4,
         alpha: Math.random() * 0.7 + 0.2,

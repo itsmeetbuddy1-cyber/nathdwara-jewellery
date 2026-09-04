@@ -16,15 +16,22 @@ export default function HeroViewer() {
     const width = container.clientWidth;
     const height = container.clientHeight || 550;
 
+    const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || 'ontouchstart' in window);
+
     // 1. Scene & Camera
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
     camera.position.set(0, 0.4, 5.2);
 
-    // 2. Renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    // 2. Renderer (Optimized pixel ratio for mobile GPUs)
+    const renderer = new THREE.WebGLRenderer({
+      antialias: !isMobile,
+      alpha: true,
+      powerPreference: 'high-performance',
+      precision: isMobile ? 'mediump' : 'highp',
+    });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(isMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.75));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.4;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -119,8 +126,8 @@ export default function HeroViewer() {
 
     scene.add(ringGroup);
 
-    // 5. Floating Gold Dust Particles
-    const particleCount = 70;
+    // 5. Floating Gold Dust Particles (Reduced on mobile for GPU savings)
+    const particleCount = isMobile ? 25 : 60;
     const particleGeo = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount * 3; i += 3) {
@@ -139,7 +146,7 @@ export default function HeroViewer() {
     const particles = new THREE.Points(particleGeo, particleMat);
     scene.add(particles);
 
-    // 6. Interactive Mouse Motion Tracking
+    // 6. Interactive Mouse & Touch Motion Tracking
     const handleMouseMove = (e) => {
       const rect = container.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -158,21 +165,29 @@ export default function HeroViewer() {
       targetRotationRef.current.x = -y * 0.4 + 0.25;
     };
 
-    // Scroll-based parallax
+    // Scroll-based parallax (desktop only to prevent mobile scroll lag)
     const handleScroll = () => {
       const scrollY = window.scrollY;
       ringGroup.position.y = -scrollY * 0.0012;
       ringGroup.rotation.z = scrollY * 0.0008;
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
     window.addEventListener('touchmove', handleTouchMove, { passive: true });
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    if (!isMobile) {
+      window.addEventListener('scroll', handleScroll, { passive: true });
+    }
 
-    // 7. Animation Loop
+    // 7. Animation Loop with IntersectionObserver (Pauses 100% when off-screen)
     let clock = new THREE.Clock();
-    let animId;
+    let animId = null;
+    let isVisible = true;
+
     const animate = () => {
+      if (!isVisible) {
+        animId = null;
+        return;
+      }
       animId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
@@ -192,7 +207,21 @@ export default function HeroViewer() {
 
       renderer.render(scene, camera);
     };
-    animate();
+
+    // Pause WebGL rendering when hero is out of view (saves massive GPU/battery on mobile)
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isVisible = entry.isIntersecting;
+        if (isVisible && !animId) {
+          animate();
+        } else if (!isVisible && animId) {
+          cancelAnimationFrame(animId);
+          animId = null;
+        }
+      },
+      { threshold: 0.05 }
+    );
+    observer.observe(container);
 
     const handleResize = () => {
       if (!container || !renderer || !camera) return;
@@ -202,13 +231,16 @@ export default function HeroViewer() {
       camera.updateProjectionMatrix();
       renderer.setSize(newWidth, newHeight);
     };
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize, { passive: true });
 
     return () => {
-      cancelAnimationFrame(animId);
+      observer.disconnect();
+      if (animId) cancelAnimationFrame(animId);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('scroll', handleScroll);
+      if (!isMobile) {
+        window.removeEventListener('scroll', handleScroll);
+      }
       window.removeEventListener('resize', handleResize);
       renderer.dispose();
     };
