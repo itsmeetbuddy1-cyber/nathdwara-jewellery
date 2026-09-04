@@ -95,7 +95,7 @@ export default function FeaturedProducts({ activeFilter, setActiveFilter, onLaun
           <div>
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-[0.25em] text-gold-400 bg-gold-500/10 border border-gold-400/30 mb-3 shadow-gold-sm">
               <Sparkles className="w-3.5 h-3.5 text-gold-300" />
-              <span>Timeless Craftsmanship • 175+ Masterpieces</span>
+              <span>Timeless Craftsmanship • {PRODUCTS.length} Masterpieces</span>
             </div>
             <h2 className="font-serif text-3xl sm:text-5xl font-bold text-white tracking-tight">
               Our Signature Collection

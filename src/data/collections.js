@@ -31,7 +31,7 @@ export const COLLECTIONS = [
     category: 'Bracelets',
     title: 'Diamond Tennis & Charm Links',
     subtitle: 'Understated brilliance',
-    count: '20 Designs',
+    count: '25 Designs',
     image: 'https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=800&q=80',
     description: 'Fluid platinum and rose gold bracelets engineered for seamless daily luxury.',
   },
