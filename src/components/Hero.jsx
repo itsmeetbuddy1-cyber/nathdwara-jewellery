@@ -2,7 +2,7 @@ import React from 'react';
 import HeroViewer from './ThreeD/HeroViewer';
 import { ArrowUpRight, Sparkles, Compass, ShieldCheck } from 'lucide-react';
 
-export default function Hero() {
+export default function Hero({ isIntroActive = false }) {
   return (
     <section
       id="home"
@@ -88,7 +88,7 @@ export default function Hero() {
             {/* Framed Glowing Aura */}
             <div className="relative rounded-3xl p-1 bg-gradient-to-b from-gold-400/25 via-white/5 to-transparent shadow-2xl">
               <div className="rounded-[22px] bg-obsidian-900/90 backdrop-blur-xl overflow-hidden border border-white/5">
-                <HeroViewer />
+                <HeroViewer isIntroActive={isIntroActive} />
               </div>
             </div>
           </div>

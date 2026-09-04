@@ -45,7 +45,7 @@ export default function App() {
 
         {/* Cinematic 3D Hero */}
         <main className="flex-1">
-          <Hero />
+          <Hero isIntroActive={showIntro} />
 
           {/* Jewellery Collections (8 Interactive Categories) */}
           <Collections onFilterCategory={handleFilterCategory} />

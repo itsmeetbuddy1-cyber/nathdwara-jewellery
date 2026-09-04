@@ -60,24 +60,33 @@
 
 /* Mobile Performance Optimizations (Smooth 60fps scrolling on iPhone & Android) */
 @media (max-width: 768px) {
-  .glass-panel {
-    background: rgba(15, 15, 19, 0.96);
+  .glass-panel,
+  .glass-panel-gold,
+  [class*="backdrop-blur"] {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+  }
+
+  .glass-panel {
+    background: rgba(15, 15, 19, 0.96);
   }
 
   .glass-panel-gold {
     background: rgba(22, 19, 14, 0.96);
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
   }
 
   body, html {
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: none;
   }
 
   .text-gold-shimmer {
     animation: none !important;
+  }
+
+  /* Ensure WebGL and 2D canvases allow native vertical scrolling */
+  canvas {
+    touch-action: pan-y !important;
   }
 }
 

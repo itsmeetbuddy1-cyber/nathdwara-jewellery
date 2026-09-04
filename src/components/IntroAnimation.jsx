@@ -6,7 +6,7 @@ export default function IntroAnimation({ onComplete }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
-    // 1. Floating Gold Dust Particles on Canvas
+    // 1. Floating Gold Dust Particles on Canvas (Optimized for Mobile)
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext('2d');
@@ -15,15 +15,15 @@ export default function IntroAnimation({ onComplete }) {
       const height = (canvas.height = window.innerHeight);
 
       const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-      const count = isMobile ? 22 : 55;
+      const count = isMobile ? 14 : 45;
       const particles = Array.from({ length: count }, () => ({
         x: Math.random() * width,
         y: Math.random() * height,
-        radius: Math.random() * 1.8 + 0.8,
-        speedY: -(Math.random() * 0.8 + 0.3),
-        speedX: (Math.random() - 0.5) * 0.4,
+        radius: Math.random() * 1.6 + 0.8,
+        speedY: -(Math.random() * 0.7 + 0.3),
+        speedX: (Math.random() - 0.5) * 0.3,
         alpha: Math.random() * 0.7 + 0.2,
-        pulsate: Math.random() * 0.05 + 0.01,
+        pulsate: Math.random() * 0.04 + 0.01,
       }));
 
       const renderParticles = () => {
@@ -32,9 +32,8 @@ export default function IntroAnimation({ onComplete }) {
         particles.forEach((p) => {
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(212, 175, 55, ${p.alpha})`;
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = '#f3e5ab';
+          ctx.fillStyle = `rgba(243, 229, 171, ${p.alpha})`;
+          // No expensive ctx.shadowBlur - avoids mobile GPU/CPU freeze
           ctx.fill();
 
           p.y += p.speedY;
@@ -80,7 +79,8 @@ export default function IntroAnimation({ onComplete }) {
 
   return (
     <div
-      className={`fixed inset-0 z-[100] bg-[#070708] flex flex-col items-center justify-center overflow-hidden transition-all duration-1000 ${
+      onClick={handleExit}
+      className={`fixed inset-0 z-[100] bg-[#070708] flex flex-col items-center justify-center overflow-hidden transition-all duration-1000 cursor-pointer ${
         stage === 4 ? 'opacity-0 scale-105 pointer-events-none' : 'opacity-100 scale-100'
       }`}
     >

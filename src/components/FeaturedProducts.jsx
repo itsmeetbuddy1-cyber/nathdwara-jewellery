@@ -26,7 +26,9 @@ export default function FeaturedProducts({ activeFilter, setActiveFilter, onLaun
   const [addedAnimationId, setAddedAnimationId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('featured');
-  const [visibleCount, setVisibleCount] = useState(24);
+  const [visibleCount, setVisibleCount] = useState(() => {
+    return typeof window !== 'undefined' && window.innerWidth < 768 ? 12 : 24;
+  });
 
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
@@ -77,7 +79,8 @@ export default function FeaturedProducts({ activeFilter, setActiveFilter, onLaun
   };
 
   const handleLoadMore = () => {
-    setVisibleCount((prev) => prev + 24);
+    const step = typeof window !== 'undefined' && window.innerWidth < 768 ? 12 : 24;
+    setVisibleCount((prev) => prev + step);
   };
 
   const handleShowAll = () => {

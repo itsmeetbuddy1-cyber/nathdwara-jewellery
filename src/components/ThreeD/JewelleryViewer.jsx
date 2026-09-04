@@ -257,20 +257,20 @@ export default function JewelleryViewer({
       envMapIntensity: 2.8,
     });
 
-    // A. Main Shank (Band) - Upright in XY plane
-    const shankGeo = new THREE.TorusGeometry(1.22, 0.155, 32, 90);
+    // A. Main Shank (Band) - Upright in XY Plane
+    const shankGeo = new THREE.TorusGeometry(1.22, 0.155, isMobile ? 18 : 32, isMobile ? 54 : 90);
     const shankMesh = new THREE.Mesh(shankGeo, metalMaterial);
     ringGroup.add(shankMesh);
     metalMeshesRef.current.push(shankMesh);
 
-    // B. Inner Comfort-Fit Core
-    const innerGeo = new THREE.TorusGeometry(1.22, 0.135, 24, 70);
+    // B. Inner Comfort-Fit Bevel
+    const innerGeo = new THREE.TorusGeometry(1.22, 0.135, isMobile ? 14 : 24, isMobile ? 44 : 70);
     const innerMesh = new THREE.Mesh(innerGeo, metalMaterial);
     ringGroup.add(innerMesh);
     metalMeshesRef.current.push(innerMesh);
 
     // C. Cathedral Shoulders (Rising to collet base)
-    const shoulderGeo = new THREE.CylinderGeometry(0.12, 0.15, 0.58, 16);
+    const shoulderGeo = new THREE.CylinderGeometry(0.12, 0.15, 0.58, isMobile ? 12 : 16);
 
     const shoulderLeft = new THREE.Mesh(shoulderGeo, metalMaterial);
     shoulderLeft.position.set(-0.46, 1.14, 0);
@@ -285,7 +285,7 @@ export default function JewelleryViewer({
     metalMeshesRef.current.push(shoulderRight);
 
     // D. Basket Collar & Collet Platform
-    const colletGeo = new THREE.CylinderGeometry(0.50, 0.38, 0.18, 24);
+    const colletGeo = new THREE.CylinderGeometry(0.50, 0.38, 0.18, isMobile ? 16 : 24);
     const colletMesh = new THREE.Mesh(colletGeo, metalMaterial);
     colletMesh.position.set(0, 1.24, 0);
     ringGroup.add(colletMesh);
@@ -294,8 +294,8 @@ export default function JewelleryViewer({
     // E. 6 Sculpted Tulip Claw Prongs
     const clawCount = 6;
     const clawRadius = 0.44;
-    const clawGeo = new THREE.CylinderGeometry(0.038, 0.048, 0.50, 12);
-    const tipGeo = new THREE.SphereGeometry(0.045, 10, 10);
+    const clawGeo = new THREE.CylinderGeometry(0.038, 0.048, 0.50, isMobile ? 8 : 12);
+    const tipGeo = new THREE.SphereGeometry(0.045, isMobile ? 8 : 10, isMobile ? 8 : 10);
 
     for (let i = 0; i < clawCount; i++) {
       const angle = (i / clawCount) * Math.PI * 2;
@@ -316,12 +316,13 @@ export default function JewelleryViewer({
     }
 
     // F. Central Faceted Solitaire Gemstone (Brilliant Cut)
+    // On mobile, zero transmission avoids expensive framebuffer copies
     const gemGeo = createBrilliantDiamondGeo(0.68, 0.42, 0.22, 0.44);
     const gemMaterial = new THREE.MeshPhysicalMaterial({
       color: gemConfig.color,
       emissive: gemConfig.emissive,
       roughness: gemConfig.roughness,
-      transmission: gemConfig.transmission,
+      transmission: isMobile ? 0.0 : gemConfig.transmission,
       opacity: gemConfig.opacity,
       transparent: true,
       ior: 2.417,
@@ -337,12 +338,12 @@ export default function JewelleryViewer({
     ringGroup.add(gemMesh);
     gemMeshRef.current = gemMesh;
 
-    // G. Shoulder Micro-Pavé Accent Diamonds
-    const paveMat = new THREE.MeshPhysicalMaterial({
+    // G. Shoulder Micro-Pavé Accent Diamonds (Standard specular - zero extra render passes)
+    const paveMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
-      transmission: 0.92,
-      roughness: 0.04,
-      ior: 2.4,
+      roughness: 0.02,
+      metalness: 0.08,
+      envMapIntensity: 3.2,
       flatShading: true,
     });
     const paveGeo = new THREE.OctahedronGeometry(0.048, 0);
@@ -445,22 +446,55 @@ export default function JewelleryViewer({
       isDraggingRef.current = false;
     };
 
+    // Mobile Touch Gesture Separation (Ensures Silky 60fps Native Scrolling)
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let gestureDetermined = false;
+    let isHorizontalSwipe = false;
+
     const handleTouchStart = (e) => {
-      if (!interactive || e.touches.length === 0) return;
-      isDraggingRef.current = true;
-      prevMousePosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      if (!interactive || e.touches.length !== 1) return;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      prevMousePosRef.current = { x: touchStartX, y: touchStartY };
+      gestureDetermined = false;
+      isHorizontalSwipe = false;
+      isDraggingRef.current = false;
     };
 
     const handleTouchMove = (e) => {
-      if (!interactive || !isDraggingRef.current || e.touches.length === 0) return;
-      const deltaX = e.touches[0].clientX - prevMousePosRef.current.x;
-      const deltaY = e.touches[0].clientY - prevMousePosRef.current.y;
+      if (!interactive || e.touches.length !== 1) return;
+      const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      const totalDX = currentX - touchStartX;
+      const totalDY = currentY - touchStartY;
 
-      targetRotationRef.current.y += deltaX * 0.01;
-      targetRotationRef.current.x += deltaY * 0.01;
+      // Determine intent after 6px of motion
+      if (!gestureDetermined && (Math.abs(totalDX) > 6 || Math.abs(totalDY) > 6)) {
+        gestureDetermined = true;
+        if (Math.abs(totalDY) >= Math.abs(totalDX)) {
+          // Vertical movement dominates -> User is scrolling the page!
+          isHorizontalSwipe = false;
+          isDraggingRef.current = false;
+          return; // Let native browser scroll smoothly
+        } else {
+          // Horizontal movement dominates -> User intentionally wants to rotate 3D ring!
+          isHorizontalSwipe = true;
+          isDraggingRef.current = true;
+        }
+      }
 
-      targetRotationRef.current.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetRotationRef.current.x));
-      prevMousePosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      if (isHorizontalSwipe && isDraggingRef.current) {
+        const deltaX = currentX - prevMousePosRef.current.x;
+        targetRotationRef.current.y += deltaX * 0.01;
+        prevMousePosRef.current = { x: currentX, y: currentY };
+      }
+    };
+
+    const handleTouchEnd = () => {
+      isDraggingRef.current = false;
+      isHorizontalSwipe = false;
+      gestureDetermined = false;
     };
 
     const handleWheel = (e) => {
@@ -474,8 +508,9 @@ export default function JewelleryViewer({
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
     container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: true });
-    window.addEventListener('touchend', handleMouseUp);
+    container.addEventListener('touchmove', handleTouchMove, { passive: true });
+    container.addEventListener('touchend', handleTouchEnd, { passive: true });
+    container.addEventListener('touchcancel', handleTouchEnd, { passive: true });
     container.addEventListener('wheel', handleWheel, { passive: false });
 
     // 8. Render Loop with Smooth Damping (Inertia) & IntersectionObserver
@@ -563,8 +598,9 @@ export default function JewelleryViewer({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
       container.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleMouseUp);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('touchcancel', handleTouchEnd);
       container.removeEventListener('wheel', handleWheel);
       renderer.dispose();
     };
@@ -592,11 +628,12 @@ export default function JewelleryViewer({
     const gemConfig = GEMSTONES[activeGemKey];
     if (!gemConfig || !gemMeshRef.current) return;
 
+    const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || 'ontouchstart' in window);
     const mat = gemMeshRef.current.material;
     mat.color.setHex(gemConfig.color);
     mat.emissive.setHex(gemConfig.emissive);
     mat.roughness = gemConfig.roughness;
-    mat.transmission = gemConfig.transmission;
+    mat.transmission = isMobile ? 0.0 : gemConfig.transmission;
     mat.opacity = gemConfig.opacity;
     mat.needsUpdate = true;
 
@@ -618,7 +655,7 @@ export default function JewelleryViewer({
   };
 
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden glass-panel border border-gold-400/25 shadow-2xl flex flex-col items-center justify-center select-none" style={{ minHeight: height }}>
+    <div className="relative w-full h-[380px] sm:h-[480px] lg:h-[560px] rounded-2xl overflow-hidden glass-panel border border-gold-400/25 shadow-2xl flex flex-col items-center justify-center select-none">
       {/* Background Radial Glow */}
       <div className="absolute inset-0 bg-radial from-gold-500/10 via-transparent to-transparent pointer-events-none" />
       <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
@@ -634,8 +671,7 @@ export default function JewelleryViewer({
       {/* 3D WebGL Canvas Container */}
       <div
         ref={mountRef}
-        className="w-full h-full cursor-grab active:cursor-grabbing flex items-center justify-center"
-        style={{ height }}
+        className="w-full h-full cursor-grab active:cursor-grabbing flex items-center justify-center touch-pan-y"
       />
 
       {/* Camera View Controls Bar */}

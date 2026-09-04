@@ -122,11 +122,11 @@ function createShadowTexture() {
   return new THREE.CanvasTexture(canvas);
 }
 
-export default function HeroViewer() {
+export default function HeroViewer({ activeMetal: initialMetal = 'gold', isIntroActive = false }) {
   const mountRef = useRef(null);
-  const [activeMetal, setActiveMetal] = useState('gold');
+  const [activeMetal, setActiveMetal] = useState(initialMetal);
 
-  // Dragging and interaction refs
+  // Interaction tracking refs
   const isDraggingRef = useRef(false);
   const prevMousePosRef = useRef({ x: 0, y: 0 });
   const userRotationRef = useRef({ x: 0, y: 0 });
@@ -137,7 +137,7 @@ export default function HeroViewer() {
     if (!container) return;
 
     const width = container.clientWidth;
-    const height = container.clientHeight || 550;
+    const height = container.clientHeight || 450;
     const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || 'ontouchstart' in window);
 
     // 1. Scene & Camera Setup
@@ -145,7 +145,7 @@ export default function HeroViewer() {
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
     camera.position.set(0, 0.35, 5.4);
 
-    // 2. High-Performance WebGL Renderer
+    // 2. High-Performance WebGL Renderer (Optimized for Mobile)
     const renderer = new THREE.WebGLRenderer({
       antialias: !isMobile,
       alpha: true,
@@ -153,6 +153,7 @@ export default function HeroViewer() {
       precision: isMobile ? 'mediump' : 'highp',
     });
     renderer.setSize(width, height);
+    // Cap pixel ratio to 1.0 on mobile to prevent GPU thermal throttling
     renderer.setPixelRatio(isMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.75));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.35;
@@ -197,18 +198,18 @@ export default function HeroViewer() {
     // 6. Master Ring Assembly (Unified Cathedral Architecture)
     const ringGroup = new THREE.Group();
 
-    // A. Main Shank (Band) - Upright in XY Plane
-    const shankGeo = new THREE.TorusGeometry(1.22, 0.155, 32, 90);
+    // A. Main Shank (Band) - Geometry optimized for mobile memory
+    const shankGeo = new THREE.TorusGeometry(1.22, 0.155, isMobile ? 18 : 32, isMobile ? 54 : 90);
     const shankMesh = new THREE.Mesh(shankGeo, metalMaterial);
     ringGroup.add(shankMesh);
 
     // B. Inner Comfort-Fit Bevel
-    const innerGeo = new THREE.TorusGeometry(1.22, 0.135, 24, 70);
+    const innerGeo = new THREE.TorusGeometry(1.22, 0.135, isMobile ? 14 : 24, isMobile ? 44 : 70);
     const innerMesh = new THREE.Mesh(innerGeo, metalMaterial);
     ringGroup.add(innerMesh);
 
     // C. Cathedral Shoulders (Rising gracefully to meet the collet)
-    const shoulderGeo = new THREE.CylinderGeometry(0.12, 0.15, 0.58, 16);
+    const shoulderGeo = new THREE.CylinderGeometry(0.12, 0.15, 0.58, isMobile ? 12 : 16);
 
     const shoulderLeft = new THREE.Mesh(shoulderGeo, metalMaterial);
     shoulderLeft.position.set(-0.46, 1.14, 0);
@@ -221,7 +222,7 @@ export default function HeroViewer() {
     ringGroup.add(shoulderRight);
 
     // D. Basket Collar & Collet Platform
-    const colletGeo = new THREE.CylinderGeometry(0.50, 0.38, 0.18, 24);
+    const colletGeo = new THREE.CylinderGeometry(0.50, 0.38, 0.18, isMobile ? 16 : 24);
     const colletMesh = new THREE.Mesh(colletGeo, metalMaterial);
     colletMesh.position.set(0, 1.24, 0);
     ringGroup.add(colletMesh);
@@ -229,8 +230,8 @@ export default function HeroViewer() {
     // E. 6 Sculpted Tulip Claw Prongs
     const clawCount = 6;
     const clawRadius = 0.44;
-    const clawGeo = new THREE.CylinderGeometry(0.038, 0.048, 0.50, 12);
-    const tipGeo = new THREE.SphereGeometry(0.045, 10, 10);
+    const clawGeo = new THREE.CylinderGeometry(0.038, 0.048, 0.50, isMobile ? 8 : 12);
+    const tipGeo = new THREE.SphereGeometry(0.045, isMobile ? 8 : 10, isMobile ? 8 : 10);
 
     for (let i = 0; i < clawCount; i++) {
       const angle = (i / clawCount) * Math.PI * 2;
@@ -249,37 +250,51 @@ export default function HeroViewer() {
     }
 
     // F. Solitaire Round Brilliant Cut Diamond
+    // On mobile, eliminate transmission render pass to prevent GPU framebuffer pipeline stall
     const diamondGeo = createBrilliantDiamondGeo(0.68, 0.42, 0.22, 0.44);
-    const diamondMat = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
-      transmission: 0.97,
-      opacity: 1.0,
-      transparent: true,
-      roughness: 0.0,
-      ior: 2.417, // True natural diamond refractive index
-      reflectivity: 0.98,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.0,
-      flatShading: true,
-      envMapIntensity: 3.4,
-    });
+    const diamondMat = isMobile
+      ? new THREE.MeshPhysicalMaterial({
+          color: 0xffffff,
+          roughness: 0.0,
+          metalness: 0.04,
+          reflectivity: 1.0,
+          clearcoat: 1.0,
+          clearcoatRoughness: 0.0,
+          ior: 2.417,
+          transparent: true,
+          opacity: 0.88,
+          flatShading: true,
+          envMapIntensity: 3.6,
+        })
+      : new THREE.MeshPhysicalMaterial({
+          color: 0xffffff,
+          transmission: 0.97,
+          opacity: 1.0,
+          transparent: true,
+          roughness: 0.0,
+          ior: 2.417,
+          reflectivity: 0.98,
+          clearcoat: 1.0,
+          clearcoatRoughness: 0.0,
+          flatShading: true,
+          envMapIntensity: 3.4,
+        });
+
     const diamondMesh = new THREE.Mesh(diamondGeo, diamondMat);
     diamondMesh.position.set(0, 1.50, 0);
     ringGroup.add(diamondMesh);
 
-    // G. Shoulder Micro-Pavé Accent Diamonds
-    const paveMat = new THREE.MeshPhysicalMaterial({
+    // G. Shoulder Micro-Pavé Accent Diamonds (Standard specular - zero overhead)
+    const paveMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
-      transmission: 0.92,
-      roughness: 0.04,
-      ior: 2.4,
+      roughness: 0.02,
+      metalness: 0.08,
+      envMapIntensity: 3.2,
       flatShading: true,
     });
     const paveGeo = new THREE.OctahedronGeometry(0.048, 0);
 
-    // 4 stones on left shoulder, 4 on right shoulder
     for (let i = 0; i < 4; i++) {
-      const t = 0.25 + i * 0.14;
       const xL = -0.32 - i * 0.11;
       const xR = 0.32 + i * 0.11;
       const y = 1.20 - i * 0.07;
@@ -312,7 +327,7 @@ export default function HeroViewer() {
     scene.add(shadowMesh);
 
     // 8. Floating Gold Micro-Sparkle Particles
-    const particleCount = isMobile ? 24 : 50;
+    const particleCount = isMobile ? 16 : 48;
     const particleGeo = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount * 3; i += 3) {
@@ -331,56 +346,96 @@ export default function HeroViewer() {
     const particles = new THREE.Points(particleGeo, particleMat);
     scene.add(particles);
 
-    // 9. Interactive Mouse & Touch Orbital Handlers
-    const handleStart = (clientX, clientY) => {
+    // 9. Interactive Mouse & Touch Handlers (Smooth Touch & Zero Scroll Hijack)
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let gestureDetermined = false;
+    let isHorizontalSwipe = false;
+
+    // Desktop Mouse Drag
+    const onMouseDown = (e) => {
       isDraggingRef.current = true;
-      prevMousePosRef.current = { x: clientX, y: clientY };
+      prevMousePosRef.current = { x: e.clientX, y: e.clientY };
       userVelocityRef.current = { x: 0, y: 0 };
     };
 
-    const handleMove = (clientX, clientY) => {
+    const onMouseMove = (e) => {
       if (!isDraggingRef.current) return;
-      const deltaX = clientX - prevMousePosRef.current.x;
-      const deltaY = clientY - prevMousePosRef.current.y;
+      const deltaX = e.clientX - prevMousePosRef.current.x;
+      const deltaY = e.clientY - prevMousePosRef.current.y;
 
       userRotationRef.current.y += deltaX * 0.007;
-      userRotationRef.current.x += deltaY * 0.007;
+      userRotationRef.current.x += deltaY * 0.006;
 
       userVelocityRef.current = {
-        x: deltaY * 0.007,
-        y: deltaX * 0.007,
+        x: deltaY * 0.005,
+        y: deltaX * 0.005,
       };
 
-      prevMousePosRef.current = { x: clientX, y: clientY };
+      prevMousePosRef.current = { x: e.clientX, y: e.clientY };
     };
 
-    const handleEnd = () => {
+    const onMouseUp = () => {
       isDraggingRef.current = false;
     };
 
-    const onMouseDown = (e) => handleStart(e.clientX, e.clientY);
-    const onMouseMove = (e) => handleMove(e.clientX, e.clientY);
-    const onMouseUp = () => handleEnd();
-
+    // Mobile Touch Drag (Separates Page Scroll from 3D Spin)
     const onTouchStart = (e) => {
-      if (e.touches.length === 1) {
-        handleStart(e.touches[0].clientX, e.touches[0].clientY);
-      }
+      if (e.touches.length !== 1) return;
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      prevMousePosRef.current = { x: touchStartX, y: touchStartY };
+      gestureDetermined = false;
+      isHorizontalSwipe = false;
+      isDraggingRef.current = false;
+      userVelocityRef.current = { x: 0, y: 0 };
     };
+
     const onTouchMove = (e) => {
-      if (e.touches.length === 1) {
-        handleMove(e.touches[0].clientX, e.touches[0].clientY);
+      if (e.touches.length !== 1) return;
+      const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      const totalDX = currentX - touchStartX;
+      const totalDY = currentY - touchStartY;
+
+      // Determine intent after 6px of motion
+      if (!gestureDetermined && (Math.abs(totalDX) > 6 || Math.abs(totalDY) > 6)) {
+        gestureDetermined = true;
+        // If vertical movement is greater, the user is scrolling the webpage!
+        if (Math.abs(totalDY) >= Math.abs(totalDX)) {
+          isHorizontalSwipe = false;
+          isDraggingRef.current = false;
+          return; // Allow native 60fps vertical page scrolling
+        } else {
+          // Horizontal swipe detected - user wants to rotate the 3D model!
+          isHorizontalSwipe = true;
+          isDraggingRef.current = true;
+        }
+      }
+
+      if (isHorizontalSwipe && isDraggingRef.current) {
+        const deltaX = currentX - prevMousePosRef.current.x;
+        // Only spin on Y axis for stable mobile inspection (never flips upside down)
+        userRotationRef.current.y += deltaX * 0.009;
+        userVelocityRef.current.y = deltaX * 0.005;
+        prevMousePosRef.current = { x: currentX, y: currentY };
       }
     };
-    const onTouchEnd = () => handleEnd();
+
+    const onTouchEnd = () => {
+      isDraggingRef.current = false;
+      isHorizontalSwipe = false;
+      gestureDetermined = false;
+    };
 
     container.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mousemove', onMouseMove, { passive: true });
     window.addEventListener('mouseup', onMouseUp);
 
     container.addEventListener('touchstart', onTouchStart, { passive: true });
-    window.addEventListener('touchmove', onTouchMove, { passive: true });
-    window.addEventListener('touchend', onTouchEnd);
+    container.addEventListener('touchmove', onTouchMove, { passive: true });
+    container.addEventListener('touchend', onTouchEnd, { passive: true });
+    container.addEventListener('touchcancel', onTouchEnd, { passive: true });
 
     // 10. Master Cinematic Floating Choreography (Harmonic Multi-Axis Precession)
     let clock = new THREE.Clock();
@@ -440,22 +495,24 @@ export default function HeroViewer() {
     const observer = new IntersectionObserver(
       ([entry]) => {
         isVisible = entry.isIntersecting;
-        if (isVisible && !animId) {
+        if (isVisible && !animId && !isIntroActive) {
           animate();
-        } else if (!isVisible && animId) {
+        } else if ((!isVisible || isIntroActive) && animId) {
           cancelAnimationFrame(animId);
           animId = null;
         }
       },
       { threshold: 0.05 }
     );
-    observer.observe(container);
+    if (!isIntroActive) {
+      observer.observe(container);
+    }
 
     // 12. Resize Handler
     const handleResize = () => {
       if (!container || !renderer || !camera) return;
       const newWidth = container.clientWidth;
-      const newHeight = container.clientHeight || 550;
+      const newHeight = container.clientHeight || 450;
       camera.aspect = newWidth / newHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(newWidth, newHeight);
@@ -470,8 +527,9 @@ export default function HeroViewer() {
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
       container.removeEventListener('touchstart', onTouchStart);
-      window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('touchend', onTouchEnd);
+      container.removeEventListener('touchmove', onTouchMove);
+      container.removeEventListener('touchend', onTouchEnd);
+      container.removeEventListener('touchcancel', onTouchEnd);
       window.removeEventListener('resize', handleResize);
       renderer.dispose();
       studioEnv.dispose();
@@ -479,10 +537,10 @@ export default function HeroViewer() {
       diamondMat.dispose();
       metalMaterial.dispose();
     };
-  }, [activeMetal]);
+  }, [activeMetal, isIntroActive]);
 
   return (
-    <div className="relative w-full h-[450px] sm:h-[520px] lg:h-[600px] flex items-center justify-center select-none">
+    <div className="relative w-full h-[360px] sm:h-[460px] lg:h-[560px] flex items-center justify-center select-none">
       {/* Background Radial Glow */}
       <div className="absolute inset-0 bg-radial from-gold-500/20 via-transparent to-transparent pointer-events-none" />
       <div className="absolute w-80 h-80 rounded-full bg-gold-400/10 blur-3xl pointer-events-none -z-10" />
@@ -490,7 +548,7 @@ export default function HeroViewer() {
       {/* 3D Canvas */}
       <div
         ref={mountRef}
-        className="w-full h-full cursor-grab active:cursor-grabbing touch-none"
+        className="w-full h-full cursor-grab active:cursor-grabbing touch-pan-y"
       />
 
       {/* Floating Badge & Quick Metal Switcher */}
