@@ -1,5 +1,6 @@
 import React from 'react';
 import { useShop } from '../context/ShopContext';
+import { FALLBACK_JEWELLERY_IMAGE } from '../data/products';
 import { X, Trash2, Plus, Minus, ShoppingBag, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
 
 export default function CartDrawer() {
@@ -99,6 +100,9 @@ export default function CartDrawer() {
                   <img
                     src={item.product.images[0]}
                     alt={item.product.name}
+                    onError={(e) => {
+                      e.currentTarget.src = FALLBACK_JEWELLERY_IMAGE;
+                    }}
                     className="w-full h-full object-cover"
                   />
                 </div>

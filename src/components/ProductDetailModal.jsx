@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useShop } from '../context/ShopContext';
+import { FALLBACK_JEWELLERY_IMAGE } from '../data/products';
 import JewelleryViewer from './ThreeD/JewelleryViewer';
 import {
   X,
@@ -134,6 +135,9 @@ export default function ProductDetailModal() {
                 <img
                   src={product.images[activeImageIndex] || product.images[0]}
                   alt={product.name}
+                  onError={(e) => {
+                    e.currentTarget.src = FALLBACK_JEWELLERY_IMAGE;
+                  }}
                   className="w-full h-full object-cover object-center"
                 />
               )}
@@ -152,7 +156,14 @@ export default function ProductDetailModal() {
                         : 'border-white/10 opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img src={img} alt="thumb" className="w-full h-full object-cover" />
+                    <img
+                      src={img}
+                      alt="thumb"
+                      onError={(e) => {
+                        e.currentTarget.src = FALLBACK_JEWELLERY_IMAGE;
+                      }}
+                      className="w-full h-full object-cover"
+                    />
                   </button>
                 ))}
               </div>

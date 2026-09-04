@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { COLLECTIONS } from '../data/collections';
+import { FALLBACK_JEWELLERY_IMAGE } from '../data/products';
 import { ArrowRight, Sparkles } from 'lucide-react';
 
 function TiltCard({ item, onSelectCategory }) {
@@ -48,6 +49,9 @@ function TiltCard({ item, onSelectCategory }) {
         <img
           src={item.image}
           alt={item.title}
+          onError={(e) => {
+            e.currentTarget.src = FALLBACK_JEWELLERY_IMAGE;
+          }}
           className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 brightness-[0.75] group-hover:brightness-[0.85]"
           loading="lazy"
         />

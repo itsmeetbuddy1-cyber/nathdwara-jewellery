@@ -1,5 +1,6 @@
 import React from 'react';
 import { useShop } from '../context/ShopContext';
+import { FALLBACK_JEWELLERY_IMAGE } from '../data/products';
 import { X, Heart, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
 
 export default function WishlistDrawer() {
@@ -80,6 +81,9 @@ export default function WishlistDrawer() {
                   <img
                     src={item.images[0]}
                     alt={item.name}
+                    onError={(e) => {
+                      e.currentTarget.src = FALLBACK_JEWELLERY_IMAGE;
+                    }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                   />
                 </div>

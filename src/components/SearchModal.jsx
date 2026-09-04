@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { PRODUCTS } from '../data/products';
+import { PRODUCTS, FALLBACK_JEWELLERY_IMAGE } from '../data/products';
 import { useShop } from '../context/ShopContext';
 import { Search, X, ShoppingBag, Eye, Heart } from 'lucide-react';
 
@@ -108,6 +108,9 @@ export default function SearchModal() {
                         <img
                           src={product.images[0]}
                           alt={product.name}
+                          onError={(e) => {
+                            e.currentTarget.src = FALLBACK_JEWELLERY_IMAGE;
+                          }}
                           className="w-full h-full object-cover"
                         />
                       </div>
