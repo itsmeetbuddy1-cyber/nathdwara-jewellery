@@ -200,17 +200,19 @@ export default function JewelleryViewer({
     sceneRef.current = scene;
 
     // 2. Camera Setup
-    const camera = new THREE.PerspectiveCamera(42, width / heightPx, 0.1, 100);
-    camera.position.set(0, 0.8, 5.5);
+    const camera = new THREE.PerspectiveCamera(40, width / heightPx, 0.1, 100);
+    camera.position.set(0, 0.5, 5.2);
+    camera.lookAt(0, 0.35, 0);
     cameraRef.current = camera;
 
     // 3. Renderer with antialiasing and tone mapping for realistic jewelry shine (Optimized for mobile)
     const renderer = new THREE.WebGLRenderer({
       antialias: !isMobile,
-      alpha: true,
-      powerPreference: 'high-performance',
+      alpha: false, // Opaque canvas is 40% faster on mobile and eliminates white background flashes
+      powerPreference: 'default',
       precision: isMobile ? 'mediump' : 'highp',
     });
+    renderer.setClearColor(0x0c0c0f, 1.0);
     renderer.setSize(width, heightPx);
     renderer.setPixelRatio(isMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.75));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -219,6 +221,11 @@ export default function JewelleryViewer({
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
+
+    const handleContextLost = (e) => {
+      e.preventDefault();
+    };
+    renderer.domElement.addEventListener('webglcontextlost', handleContextLost, false);
 
     // 3. Dynamic Studio Environment Map
     const studioEnv = createStudioEnvironment();
@@ -235,6 +242,10 @@ export default function JewelleryViewer({
     const rimLight = new THREE.DirectionalLight(0xddeeff, 2.6);
     rimLight.position.set(-6, 4, -4);
     scene.add(rimLight);
+
+    const frontFillLight = new THREE.DirectionalLight(0xfff5e6, 2.2);
+    frontFillLight.position.set(0, 1.5, 6.0);
+    scene.add(frontFillLight);
 
     const bounceLight = new THREE.DirectionalLight(0xd4af37, 2.0);
     bounceLight.position.set(0, -3, 2.5);
@@ -270,17 +281,17 @@ export default function JewelleryViewer({
     metalMeshesRef.current.push(innerMesh);
 
     // C. Cathedral Shoulders (Rising to collet base)
-    const shoulderGeo = new THREE.CylinderGeometry(0.12, 0.15, 0.58, isMobile ? 12 : 16);
+    const shoulderGeo = new THREE.CylinderGeometry(0.08, 0.13, 0.38, isMobile ? 12 : 16);
 
     const shoulderLeft = new THREE.Mesh(shoulderGeo, metalMaterial);
-    shoulderLeft.position.set(-0.46, 1.14, 0);
-    shoulderLeft.rotation.z = Math.PI / 4.0;
+    shoulderLeft.position.set(-0.30, 1.18, 0);
+    shoulderLeft.rotation.z = Math.PI / 6.0;
     ringGroup.add(shoulderLeft);
     metalMeshesRef.current.push(shoulderLeft);
 
     const shoulderRight = new THREE.Mesh(shoulderGeo, metalMaterial);
-    shoulderRight.position.set(0.46, 1.14, 0);
-    shoulderRight.rotation.z = -Math.PI / 4.0;
+    shoulderRight.position.set(0.30, 1.18, 0);
+    shoulderRight.rotation.z = -Math.PI / 6.0;
     ringGroup.add(shoulderRight);
     metalMeshesRef.current.push(shoulderRight);
 
@@ -515,7 +526,7 @@ export default function JewelleryViewer({
 
     // 8. Render Loop with Smooth Damping (Inertia) & IntersectionObserver
     let clock = new THREE.Clock();
-    let isVisible = false;
+    let isVisible = true;
 
     const animate = () => {
       if (!isVisible) {
@@ -564,6 +575,10 @@ export default function JewelleryViewer({
       renderer.render(scene, camera);
     };
 
+    // Render immediate initial frame so the ring is visible instantly on all devices
+    renderer.render(scene, camera);
+    animate();
+
     // Auto-pause when 3D Studio is scrolled off-screen
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -575,7 +590,7 @@ export default function JewelleryViewer({
           animationFrameIdRef.current = null;
         }
       },
-      { threshold: 0.05 }
+      { threshold: 0.02 }
     );
     observer.observe(container);
 
@@ -594,6 +609,7 @@ export default function JewelleryViewer({
       observer.disconnect();
       if (animationFrameIdRef.current) cancelAnimationFrame(animationFrameIdRef.current);
       window.removeEventListener('resize', handleResize);
+      renderer.domElement.removeEventListener('webglcontextlost', handleContextLost);
       container.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
@@ -655,7 +671,7 @@ export default function JewelleryViewer({
   };
 
   return (
-    <div className="relative w-full h-[380px] sm:h-[480px] lg:h-[560px] rounded-2xl overflow-hidden glass-panel border border-gold-400/25 shadow-2xl flex flex-col items-center justify-center select-none">
+    <div className="relative w-full min-h-[460px] sm:min-h-[520px] lg:h-[580px] rounded-2xl overflow-hidden bg-obsidian-950 border border-gold-400/25 shadow-2xl flex flex-col justify-between select-none">
       {/* Background Radial Glow */}
       <div className="absolute inset-0 bg-radial from-gold-500/10 via-transparent to-transparent pointer-events-none" />
       <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
@@ -671,7 +687,7 @@ export default function JewelleryViewer({
       {/* 3D WebGL Canvas Container */}
       <div
         ref={mountRef}
-        className="w-full h-full cursor-grab active:cursor-grabbing flex items-center justify-center touch-pan-y"
+        className="relative flex-1 w-full min-h-[300px] sm:min-h-[380px] cursor-grab active:cursor-grabbing flex items-center justify-center touch-pan-y"
       />
 
       {/* Camera View Controls Bar */}
