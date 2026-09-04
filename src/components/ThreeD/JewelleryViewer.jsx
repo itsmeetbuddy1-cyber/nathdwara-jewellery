@@ -72,6 +72,91 @@ export const GEMSTONES = {
   },
 };
 
+function createStudioEnvironment() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, 512);
+  bgGrad.addColorStop(0, '#0c0c0f');
+  bgGrad.addColorStop(0.5, '#191820');
+  bgGrad.addColorStop(1, '#08080a');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, 1024, 512);
+
+  const softbox = ctx.createRadialGradient(512, 100, 15, 512, 100, 240);
+  softbox.addColorStop(0, 'rgba(255, 252, 240, 1.0)');
+  softbox.addColorStop(0.35, 'rgba(255, 238, 195, 0.85)');
+  softbox.addColorStop(0.7, 'rgba(212, 175, 55, 0.3)');
+  softbox.addColorStop(1, 'rgba(212, 175, 55, 0.0)');
+  ctx.fillStyle = softbox;
+  ctx.fillRect(200, 0, 624, 260);
+
+  const rimRight = ctx.createRadialGradient(880, 240, 20, 880, 240, 180);
+  rimRight.addColorStop(0, 'rgba(245, 205, 120, 0.95)');
+  rimRight.addColorStop(0.5, 'rgba(180, 125, 30, 0.5)');
+  rimRight.addColorStop(1, 'rgba(160, 110, 20, 0.0)');
+  ctx.fillStyle = rimRight;
+  ctx.fillRect(680, 80, 344, 320);
+
+  const rimLeft = ctx.createRadialGradient(140, 240, 20, 140, 240, 180);
+  rimLeft.addColorStop(0, 'rgba(235, 245, 255, 0.95)');
+  rimLeft.addColorStop(0.5, 'rgba(100, 140, 190, 0.45)');
+  rimLeft.addColorStop(1, 'rgba(40, 60, 90, 0.0)');
+  ctx.fillStyle = rimLeft;
+  ctx.fillRect(0, 80, 340, 320);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.mapping = THREE.EquirectangularReflectionMapping;
+  return texture;
+}
+
+function createBrilliantDiamondGeo(radius = 0.68, tableRadius = 0.40, crownHeight = 0.22, pavilionDepth = 0.44) {
+  const geo = new THREE.BufferGeometry();
+  const segments = 16;
+  const vertices = [];
+
+  const tableY = crownHeight;
+  const girdleY = 0;
+  const culetY = -pavilionDepth;
+
+  const tableCenter = [0, tableY, 0];
+  const culet = [0, culetY, 0];
+
+  const tableVerts = [];
+  for (let i = 0; i < segments; i++) {
+    const a = (i / segments) * Math.PI * 2;
+    tableVerts.push([Math.cos(a) * tableRadius, tableY, Math.sin(a) * tableRadius]);
+  }
+
+  const girdleVerts = [];
+  for (let i = 0; i < segments; i++) {
+    const a = (i / segments) * Math.PI * 2;
+    girdleVerts.push([Math.cos(a) * radius, girdleY, Math.sin(a) * radius]);
+  }
+
+  for (let i = 0; i < segments; i++) {
+    const next = (i + 1) % segments;
+    vertices.push(...tableCenter, ...tableVerts[i], ...tableVerts[next]);
+  }
+
+  for (let i = 0; i < segments; i++) {
+    const next = (i + 1) % segments;
+    vertices.push(...tableVerts[i], ...girdleVerts[i], ...girdleVerts[next]);
+    vertices.push(...tableVerts[i], ...girdleVerts[next], ...tableVerts[next]);
+  }
+
+  for (let i = 0; i < segments; i++) {
+    const next = (i + 1) % segments;
+    vertices.push(...culet, ...girdleVerts[next], ...girdleVerts[i]);
+  }
+
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geo.computeVertexNormals();
+  return geo;
+}
+
 export default function JewelleryViewer({
   initialMetal = 'yellowGold',
   initialGem = 'diamond',
@@ -135,27 +220,27 @@ export default function JewelleryViewer({
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
+    // 3. Dynamic Studio Environment Map
+    const studioEnv = createStudioEnvironment();
+    scene.environment = studioEnv;
+
     // 4. Studio Lighting setup
-    // Ambient light
-    const ambientLight = new THREE.AmbientLight(0xfff8ee, 0.8);
+    const ambientLight = new THREE.AmbientLight(0xfff8ee, 1.2);
     scene.add(ambientLight);
 
-    // Warm Key Light (Jeweller's lamp)
-    const keyLight = new THREE.DirectionalLight(0xfff1d6, 2.8);
-    keyLight.position.set(4, 6, 5);
+    const keyLight = new THREE.DirectionalLight(0xfffaed, 3.4);
+    keyLight.position.set(5, 7, 6);
     scene.add(keyLight);
 
-    // Rim/Specular Cold Light (creates diamond sparkle contrast)
-    const rimLight = new THREE.DirectionalLight(0xdbeafe, 2.2);
-    rimLight.position.set(-5, 4, -4);
+    const rimLight = new THREE.DirectionalLight(0xddeeff, 2.6);
+    rimLight.position.set(-6, 4, -4);
     scene.add(rimLight);
 
-    // Bottom soft reflector light (gold reflections)
-    const bounceLight = new THREE.DirectionalLight(0xd4af37, 1.2);
-    bounceLight.position.set(0, -5, 2);
+    const bounceLight = new THREE.DirectionalLight(0xd4af37, 2.0);
+    bounceLight.position.set(0, -3, 2.5);
     scene.add(bounceLight);
 
-    // 5. Build 3D Jewellery: Royal Solitaire Ring
+    // 5. Build 3D Jewellery: Royal Solitaire Ring (Unified Cathedral Architecture)
     const ringGroup = new THREE.Group();
     ringGroupRef.current = ringGroup;
     metalMeshesRef.current = [];
@@ -169,62 +254,69 @@ export default function JewelleryViewer({
       color: metalConfig.color,
       roughness: metalConfig.roughness,
       metalness: metalConfig.metalness,
-      envMapIntensity: 2.5,
+      envMapIntensity: 2.8,
     });
 
-    // Ring Band: Elegant Torus
-    const bandGeo = new THREE.TorusGeometry(1.35, 0.16, 32, 100);
-    const bandMesh = new THREE.Mesh(bandGeo, metalMaterial);
-    bandMesh.rotation.x = Math.PI / 2;
-    ringGroup.add(bandMesh);
-    metalMeshesRef.current.push(bandMesh);
+    // A. Main Shank (Band) - Upright in XY plane
+    const shankGeo = new THREE.TorusGeometry(1.22, 0.155, 32, 90);
+    const shankMesh = new THREE.Mesh(shankGeo, metalMaterial);
+    ringGroup.add(shankMesh);
+    metalMeshesRef.current.push(shankMesh);
 
-    // Inner Comfort Core
-    const innerBandGeo = new THREE.TorusGeometry(1.35, 0.14, 24, 80);
-    const innerBandMesh = new THREE.Mesh(innerBandGeo, metalMaterial);
-    innerBandMesh.rotation.x = Math.PI / 2;
-    ringGroup.add(innerBandMesh);
-    metalMeshesRef.current.push(innerBandMesh);
+    // B. Inner Comfort-Fit Core
+    const innerGeo = new THREE.TorusGeometry(1.22, 0.135, 24, 70);
+    const innerMesh = new THREE.Mesh(innerGeo, metalMaterial);
+    ringGroup.add(innerMesh);
+    metalMeshesRef.current.push(innerMesh);
 
-    // Crown / Cathedral Shoulder details
-    const shoulderGeo = new THREE.CylinderGeometry(0.18, 0.14, 0.65, 16);
+    // C. Cathedral Shoulders (Rising to collet base)
+    const shoulderGeo = new THREE.CylinderGeometry(0.12, 0.15, 0.58, 16);
+
     const shoulderLeft = new THREE.Mesh(shoulderGeo, metalMaterial);
-    shoulderLeft.position.set(-0.6, 1.25, 0);
-    shoulderLeft.rotation.z = Math.PI / 6;
+    shoulderLeft.position.set(-0.46, 1.14, 0);
+    shoulderLeft.rotation.z = Math.PI / 4.0;
     ringGroup.add(shoulderLeft);
     metalMeshesRef.current.push(shoulderLeft);
 
     const shoulderRight = new THREE.Mesh(shoulderGeo, metalMaterial);
-    shoulderRight.position.set(0.6, 1.25, 0);
-    shoulderRight.rotation.z = -Math.PI / 6;
+    shoulderRight.position.set(0.46, 1.14, 0);
+    shoulderRight.rotation.z = -Math.PI / 4.0;
     ringGroup.add(shoulderRight);
     metalMeshesRef.current.push(shoulderRight);
 
-    // Crown Setting Platform (Halo base)
-    const haloBaseGeo = new THREE.CylinderGeometry(0.68, 0.45, 0.22, 24);
-    const haloBaseMesh = new THREE.Mesh(haloBaseGeo, metalMaterial);
-    haloBaseMesh.position.set(0, 1.52, 0);
-    ringGroup.add(haloBaseMesh);
-    metalMeshesRef.current.push(haloBaseMesh);
+    // D. Basket Collar & Collet Platform
+    const colletGeo = new THREE.CylinderGeometry(0.50, 0.38, 0.18, 24);
+    const colletMesh = new THREE.Mesh(colletGeo, metalMaterial);
+    colletMesh.position.set(0, 1.24, 0);
+    ringGroup.add(colletMesh);
+    metalMeshesRef.current.push(colletMesh);
 
-    // 4 Elegant Prongs holding the central solitaire
-    const prongGeo = new THREE.CylinderGeometry(0.045, 0.05, 0.6, 12);
-    const prongPositions = [
-      [0.34, 1.75, 0.34],
-      [-0.34, 1.75, 0.34],
-      [0.34, 1.75, -0.34],
-      [-0.34, 1.75, -0.34],
-    ];
-    prongPositions.forEach(([px, py, pz]) => {
-      const prong = new THREE.Mesh(prongGeo, metalMaterial);
-      prong.position.set(px, py, pz);
-      prong.rotation.x = pz * 0.4;
-      prong.rotation.z = -px * 0.4;
-      ringGroup.add(prong);
-      metalMeshesRef.current.push(prong);
-    });
+    // E. 6 Sculpted Tulip Claw Prongs
+    const clawCount = 6;
+    const clawRadius = 0.44;
+    const clawGeo = new THREE.CylinderGeometry(0.038, 0.048, 0.50, 12);
+    const tipGeo = new THREE.SphereGeometry(0.045, 10, 10);
 
-    // Central Gemstone Material
+    for (let i = 0; i < clawCount; i++) {
+      const angle = (i / clawCount) * Math.PI * 2;
+      const cx = Math.cos(angle) * clawRadius;
+      const cz = Math.sin(angle) * clawRadius;
+
+      const claw = new THREE.Mesh(clawGeo, metalMaterial);
+      claw.position.set(cx, 1.48, cz);
+      claw.rotation.x = -cz * 0.28;
+      claw.rotation.z = cx * 0.28;
+      ringGroup.add(claw);
+      metalMeshesRef.current.push(claw);
+
+      const tip = new THREE.Mesh(tipGeo, metalMaterial);
+      tip.position.set(cx * 0.94, 1.72, cz * 0.94);
+      ringGroup.add(tip);
+      metalMeshesRef.current.push(tip);
+    }
+
+    // F. Central Faceted Solitaire Gemstone (Brilliant Cut)
+    const gemGeo = createBrilliantDiamondGeo(0.68, 0.42, 0.22, 0.44);
     const gemMaterial = new THREE.MeshPhysicalMaterial({
       color: gemConfig.color,
       emissive: gemConfig.emissive,
@@ -232,44 +324,74 @@ export default function JewelleryViewer({
       transmission: gemConfig.transmission,
       opacity: gemConfig.opacity,
       transparent: true,
-      ior: 2.4,
+      ior: 2.417,
       metalness: 0.05,
-      reflectivity: 0.95,
+      reflectivity: 0.98,
       clearcoat: 1.0,
-      clearcoatRoughness: 0.05,
+      clearcoatRoughness: 0.0,
       flatShading: true,
+      envMapIntensity: 3.4,
     });
-
-    // Central Faceted Solitaire: Double Octahedron Brilliant Cut
-    const gemGeo = new THREE.OctahedronGeometry(0.55, 1);
     const gemMesh = new THREE.Mesh(gemGeo, gemMaterial);
-    gemMesh.position.set(0, 1.82, 0);
-    gemMesh.scale.set(1.05, 0.85, 1.05);
+    gemMesh.position.set(0, 1.50, 0);
     ringGroup.add(gemMesh);
     gemMeshRef.current = gemMesh;
 
-    // Halo Micro-Diamonds around the head
-    const haloDiamondGeo = new THREE.OctahedronGeometry(0.08, 0);
-    const haloDiamondMat = new THREE.MeshPhysicalMaterial({
+    // G. Shoulder Micro-Pavé Accent Diamonds
+    const paveMat = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
-      transmission: 0.9,
-      transparent: true,
-      roughness: 0.05,
+      transmission: 0.92,
+      roughness: 0.04,
       ior: 2.4,
-      reflectivity: 0.9,
+      flatShading: true,
     });
+    const paveGeo = new THREE.OctahedronGeometry(0.048, 0);
 
-    const haloCount = 14;
-    const haloRadius = 0.65;
-    for (let i = 0; i < haloCount; i++) {
-      const angle = (i / haloCount) * Math.PI * 2;
-      const hx = Math.cos(angle) * haloRadius;
-      const hz = Math.sin(angle) * haloRadius;
-      const microGem = new THREE.Mesh(haloDiamondGeo, haloDiamondMat);
-      microGem.position.set(hx, 1.58, hz);
-      ringGroup.add(microGem);
-      haloGemMeshesRef.current.push(microGem);
+    for (let i = 0; i < 4; i++) {
+      const xL = -0.32 - i * 0.11;
+      const xR = 0.32 + i * 0.11;
+      const y = 1.20 - i * 0.07;
+
+      const microL = new THREE.Mesh(paveGeo, paveMat);
+      microL.position.set(xL, y, 0.08);
+      ringGroup.add(microL);
+      haloGemMeshesRef.current.push(microL);
+
+      const microR = new THREE.Mesh(paveGeo, paveMat);
+      microR.position.set(xR, y, 0.08);
+      ringGroup.add(microR);
+      haloGemMeshesRef.current.push(microR);
     }
+
+    // Contact floor shadow
+    const shadowGeo = new THREE.PlaneGeometry(3.8, 3.8);
+    const shadowCanvas = document.createElement('canvas');
+    shadowCanvas.width = 256;
+    shadowCanvas.height = 256;
+    const shadowCtx = shadowCanvas.getContext('2d');
+    const sGrad = shadowCtx.createRadialGradient(128, 128, 10, 128, 128, 120);
+    sGrad.addColorStop(0, 'rgba(0, 0, 0, 0.65)');
+    sGrad.addColorStop(0.35, 'rgba(0, 0, 0, 0.35)');
+    sGrad.addColorStop(0.7, 'rgba(0, 0, 0, 0.1)');
+    sGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    shadowCtx.fillStyle = sGrad;
+    shadowCtx.fillRect(0, 0, 256, 256);
+    const shadowTexture = new THREE.CanvasTexture(shadowCanvas);
+
+    const shadowMat = new THREE.MeshBasicMaterial({
+      map: shadowTexture,
+      transparent: true,
+      opacity: 0.42,
+      depthWrite: false,
+    });
+    const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+    shadowMesh.rotation.x = -Math.PI / 2;
+    shadowMesh.position.y = -1.65;
+    scene.add(shadowMesh);
+
+    // Initial orientation
+    ringGroup.rotation.x = 0.32;
+    ringGroup.rotation.y = 0.45;
 
     // 6. Floating Gold Shimmer Particles (Optimized for mobile)
     const particleCount = isMobile ? 18 : 45;
@@ -369,9 +491,14 @@ export default function JewelleryViewer({
 
       const elapsedTime = clock.getElapsedTime();
 
-      // Auto rotation if not dragging and enabled
+      // Auto rotation with Harmonic Multi-Axis Precession (Premium luxury motion)
       if (isAutoRotating && !isDraggingRef.current) {
-        targetRotationRef.current.y += 0.004;
+        const cinematicPitch = 0.32 + Math.sin(elapsedTime * 0.75) * 0.12;
+        targetRotationRef.current.x = cinematicPitch;
+        targetRotationRef.current.y += 0.004 + Math.sin(elapsedTime * 0.6) * 0.002;
+        if (ringGroupRef.current) {
+          ringGroupRef.current.rotation.z = Math.cos(elapsedTime * 0.55) * 0.08;
+        }
       }
 
       // Smooth interpolation for rotations
@@ -381,8 +508,12 @@ export default function JewelleryViewer({
       if (ringGroupRef.current) {
         ringGroupRef.current.rotation.x = currentRotationRef.current.x;
         ringGroupRef.current.rotation.y = currentRotationRef.current.y;
-        // Subtle floating motion
+        // Weightless floating hover
         ringGroupRef.current.position.y = Math.sin(elapsedTime * 1.5) * 0.06;
+
+        // Dynamic shadow breathing
+        shadowMesh.scale.setScalar(1.0 - ringGroupRef.current.position.y * 0.35);
+        shadowMat.opacity = 0.42 - ringGroupRef.current.position.y * 0.18;
       }
 
       // Smooth zoom interpolation
